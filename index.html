@@ -1,199 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NGS FHIR JSON Generator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background-color: #f9f9f9;
-    }
-    h1 {
-      color: #4CAF50;
-    }
-    form {
-      margin-bottom: 20px;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
-    }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin: 5px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    pre {
-      background-color: #f4f4f4;
-      padding: 15px;
-      border-radius: 4px;
-      overflow-x: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGS FHIR Observation Generator</title>
+    <script>
+        // Function to generate FHIR Observation JSON
+        function generateFHIRJSON() {
+            const observation = {
+                resourceType: "Observation",
+                id: document.getElementById("observationId").value,
+                status: document.getElementById("status").value,
+                category: [
+                    {
+                        coding: [
+                            {
+                                system: "http://terminology.hl7.org/CodeSystem/observation-category",
+                                code: "laboratory",
+                                display: "Laboratory"
+                            }
+                        ]
+                    }
+                ],
+                code: {
+                    coding: [
+                        {
+                            system: "http://loinc.org",
+                            code: document.getElementById("loincCode").value,
+                            display: document.getElementById("testType").value
+                        }
+                    ],
+                    text: document.getElementById("testType").value
+                },
+                effectiveDateTime: document.getElementById("effectiveDateTime").value,
+                component: [
+                    {
+                        code: {
+                            coding: [
+                                {
+                                    system: "http://loinc.org",
+                                    code: "69548-6",
+                                    display: "Gene studied"
+                                }
+                            ],
+                            text: "Gene Studied"
+                        },
+                        valueCodeableConcept: {
+                            text: document.getElementById("geneStudied").value
+                        }
+                    }
+                ],
+                subject: {
+                    reference: `Patient/${document.getElementById("patientId").value}`
+                },
+                performer: [
+                    {
+                        reference: `Practitioner/${document.getElementById("performerId").value}`
+                    }
+                ]
+            };
+
+            // Display the generated JSON
+            document.getElementById("result").textContent = JSON.stringify(observation, null, 2);
+        }
+    </script>
 </head>
 <body>
-  <h1>NGS FHIR JSON Generator</h1>
-  <form id="ngsForm">
-    <label for="geneStudied">Gene Studied:</label>
-    <input type="text" id="geneStudied" name="geneStudied" required>
+    <h1>NGS FHIR Observation Generator</h1>
 
-    <label for="referenceSequence">Reference Sequence:</label>
-    <input type="text" id="referenceSequence" name="referenceSequence" required>
+    <form onsubmit="event.preventDefault(); generateFHIRJSON();">
+        <label for="observationId">Observation ID:</label><br>
+        <input type="text" id="observationId" required><br><br>
 
-    <label for="nucleotideChange">Nucleotide Change (c.):</label>
-    <input type="text" id="nucleotideChange" name="nucleotideChange" required>
+        <label for="status">Status:</label><br>
+        <select id="status" required>
+            <option value="final">Final</option>
+            <option value="amended">Amended</option>
+            <option value="preliminary">Preliminary</option>
+        </select><br><br>
 
-    <label for="proteinChange">Protein Change (p.):</label>
-    <input type="text" id="proteinChange" name="proteinChange" required>
+        <label for="loincCode">LOINC Code:</label><br>
+        <input type="text" id="loincCode" required><br><br>
 
-    <label for="alleleFrequency">Allele Frequency (%):</label>
-    <input type="number" id="alleleFrequency" name="alleleFrequency" step="0.01" required>
+        <label for="testType">Test Type:</label><br>
+        <input type="text" id="testType" required><br><br>
 
-    <label for="status">Observation Status:</label>
-    <select id="status" name="status" required>
-      <option value="final">Final</option>
-      <option value="preliminary">Preliminary</option>
-      <option value="amended">Amended</option>
-    </select>
+        <label for="effectiveDateTime">Effective DateTime:</label><br>
+        <input type="datetime-local" id="effectiveDateTime" required><br><br>
 
-    <button type="button" onclick="generateFHIRJSON()">Generate FHIR JSON</button>
-  </form>
+        <label for="geneStudied">Gene Studied:</label><br>
+        <input type="text" id="geneStudied" required><br><br>
 
-  <h2>Generated FHIR JSON:</h2>
-  <pre id="output"></pre>
+        <label for="patientId">Patient ID:</label><br>
+        <input type="text" id="patientId" required><br><br>
 
-  <script>
-    function generateFHIRJSON() {
-      // Get form values
-      const geneStudied = document.getElementById('geneStudied').value;
-      const referenceSequence = document.getElementById('referenceSequence').value;
-      const nucleotideChange = document.getElementById('nucleotideChange').value;
-      const proteinChange = document.getElementById('proteinChange').value;
-      const alleleFrequency = parseFloat(document.getElementById('alleleFrequency').value);
-      const status = document.getElementById('status').value;
+        <label for="performerId">Performer ID:</label><br>
+        <input type="text" id="performerId"><br><br>
 
-      // Construct FHIR Observation JSON
-      const fhirObservation = {
-        resourceType: "Observation",
-        id: "ngs-observation-" + Date.now(),
-        status: status,
-        category: [
-          {
-            coding: [
-              {
-                system: "http://terminology.hl7.org/CodeSystem/observation-category",
-                code: "laboratory",
-                display: "Laboratory"
-              }
-            ]
-          }
-        ],
-        code: {
-          coding: [
-            {
-              system: "http://loinc.org",
-              code: "81247-9",
-              display: "Genetic variant assessment"
-            }
-          ],
-          text: "NGS Genetic Variant"
-        },
-        effectiveDateTime: new Date().toISOString(),
-        component: [
-          {
-            code: {
-              coding: [
-                {
-                  system: "http://loinc.org",
-                  code: "69548-6",
-                  display: "Gene studied"
-                }
-              ],
-              text: "Gene Studied"
-            },
-            valueCodeableConcept: {
-              text: geneStudied
-            }
-          },
-          {
-            code: {
-              coding: [
-                {
-                  system: "http://loinc.org",
-                  code: "48018-6",
-                  display: "Genomic reference sequence ID"
-                }
-              ],
-              text: "Reference Sequence"
-            },
-            valueString: referenceSequence
-          },
-          {
-            code: {
-              coding: [
-                {
-                  system: "http://loinc.org",
-                  code: "69547-8",
-                  display: "DNA change (c.)"
-                }
-              ],
-              text: "Nucleotide Change"
-            },
-            valueString: nucleotideChange
-          },
-          {
-            code: {
-              coding: [
-                {
-                  system: "http://loinc.org",
-                  code: "69551-0",
-                  display: "Amino acid change (p.)"
-                }
-              ],
-              text: "Protein Change"
-            },
-            valueString: proteinChange
-          },
-          {
-            code: {
-              coding: [
-                {
-                  system: "http://loinc.org",
-                  code: "53037-8",
-                  display: "Genomic allele frequency"
-                }
-              ],
-              text: "Allele Frequency"
-            },
-            valueQuantity: {
-              value: alleleFrequency,
-              unit: "%",
-              system: "http://unitsofmeasure.org",
-              code: "%"
-            }
-          }
-        ]
-      };
+        <button type="submit">Generate JSON</button>
+    </form>
 
-      // Display the generated JSON
-      document.getElementById('output').textContent = JSON.stringify(fhirObservation, null, 2);
-    }
-  </script>
+    <h2>Generated FHIR Observation JSON:</h2>
+    <pre id="result" style="background-color: #f4f4f4; padding: 10px; border: 1px solid #ccc; overflow-x: auto;"></pre>
 </body>
 </html>
